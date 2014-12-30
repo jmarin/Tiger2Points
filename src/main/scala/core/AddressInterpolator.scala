@@ -92,13 +92,14 @@ object AddressInterpolator {
     val x = a - range.start
     val dist = x * l / d
     //TODO: make offset distance a bit more intelligent
-    val geometry = line.pointAtDistWithOffset(dist, sign * 0.0001)
+    val geometry = line.pointAtDistWithOffset((dist * -1), sign * 0.0001)
     val addressField = Field("address", StringType())
     val geomField = Field("geometry", GeometryType())
-    val schema = Schema(geomField, addressField)
+    val numberField = Field("number", IntType())
+    val schema = Schema(geomField, addressField, numberField)
     val fullname = feature.values.get("FULLNAME").getOrElse("")
     val address = a.toString + " " + fullname
-    val values = Map("geometry" -> geometry, "address" -> address)
+    val values = Map("geometry" -> geometry, "address" -> address, "number" -> a)
     Feature(schema, values)
   }
 
