@@ -33,10 +33,14 @@ object AddressInterpolator {
     AddressRange(start, end)
   }
 
+  def isNumeric(str: String): Boolean = {
+    str.forall(_.isDigit)
+  }
+
   def str2Int(str: String): Int = {
     str match {
       case "" => 0
-      case _ => str.toInt
+      case _ => if (isNumeric(str)) str.toInt else 0
     }
   }
 
@@ -48,7 +52,10 @@ object AddressInterpolator {
   }
 
   def lines2AddressPoints(features: List[Feature]): List[Feature] = {
-    features.map(f => line2AddressPoint(f)).flatten
+    features.map { f =>
+      //println("Processing feature: " + f.values.get("TLID").getOrElse(0))
+      line2AddressPoint(f)
+    }.flatten
   }
 
   def line2AddressPoint(feature: Feature): List[Feature] = {
