@@ -3,6 +3,7 @@ package core
 import geometry._
 import feature._
 import geojson.FeatureJsonProtocol._
+import spray.json._
 
 object AddressInterpolator {
 
@@ -100,7 +101,9 @@ object AddressInterpolator {
     val fullname = feature.values.get("FULLNAME").getOrElse("")
     val address = a.toString + " " + fullname
     val values = Map("geometry" -> geometry, "address" -> address, "number" -> a)
-    Feature(schema, values)
+    val f = Feature(schema, values)
+    //println(f.toJson.toString)
+    f
   }
 
 }
