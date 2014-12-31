@@ -1,5 +1,6 @@
 package main
 
+import feature._
 import core._
 import io.shapefile._
 import geometry._
@@ -10,7 +11,7 @@ import java.nio.file.{ FileSystems, Files, StandardOpenOption, Paths }
 import java.io.{ FileOutputStream, PrintWriter }
 import akka.actor.ActorSystem
 import akka.stream.FlowMaterializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{ Source, ForeachSink, Flow, RunnableFlow }
 import scala.util.Try
 
 object Tiger2PointsStreaming {
@@ -35,21 +36,43 @@ object Tiger2PointsStreaming {
       val output = new PrintWriter(new FileOutputStream(outputPathStr), true)
       output.println("""{"type": "FeatureCollection","features": [""")
 
-      Source(() => features.toIterator)
+      val source = Source(() => features.toIterator)
+
+      val sink = ForeachSink[Feature] { f =>
+        val json = f.toJson
+        println(json)
+        output.println(json + ",")
+      }
+
+      val flow = Flow[Feature]
         .map(f => AddressInterpolator.line2AddressPoint(f))
         .mapConcat(_.toList)
-        .foreach {
-          f =>
-            val json = f.toJson
-            println(json)
-            output.println(json + ",")
-        }
-        .onComplete {
-          _ =>
-            output.println("""]}""")
-            Try(output.close())
-            system.shutdown()
-        }
+
+      val materialized = source.via(flow).to(sink).run()
+      materialized.get(sink).onComplete {
+        _ =>
+          output.println("""]}""")
+          Try(output.close())
+          system.shutdown()
+      }
+
+      //Another way, connecting all at once
+
+      //Source(() => features.toIterator)
+      //  .map(f => AddressInterpolator.line2AddressPoint(f))
+      //  .mapConcat(_.toList)
+      //  .foreach {
+      //    f =>
+      //      val json = f.toJson
+      //      println(json)
+      //      output.println(json + ",")
+      //  }
+      //  .onComplete {
+      //    _ =>
+      //      output.println("""]}""")
+      //      Try(output.close())
+      //      system.shutdown()
+      //  }
 
     }
 
